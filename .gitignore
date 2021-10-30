@@ -1,0 +1,21 @@
+/.build
+/.swiftpm
+/Packages
+/prefix
+
+# SDL
+/Libraries/SDL/include/*~modified
+
+# SDL_image
+/Libraries/SDL_image/.deps
+/Libraries/SDL_image/.libs
+/Libraries/SDL_image/*.o
+/Libraries/SDL_image/*.lo
+/Libraries/SDL_image/*.la
+/Libraries/SDL_image/Makefile
+/Libraries/SDL_image/SDL2_image.pc
+/Libraries/SDL_image/config.log
+/Libraries/SDL_image/config.status
+/Libraries/SDL_image/libtool
+/Libraries/SDL_image/showimage.o
+/Libraries/SDL_image/showimage
