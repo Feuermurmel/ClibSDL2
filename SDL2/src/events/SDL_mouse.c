@@ -602,7 +602,7 @@ SDL_SendMouseButton(SDL_Window * window, SDL_MouseID mouseID, Uint8 state, Uint8
 }
 
 int
-SDL_SendMouseWheel(SDL_Window * window, SDL_MouseID mouseID, float x, float y, SDL_MouseWheelDirection direction)
+SDL_SendMouseWheel(SDL_Window * window, SDL_MouseID mouseID, float x, float y, int continuousX, int continuousY, SDL_bool isContinuousSource, SDL_MouseWheelDirection direction)
 {
     SDL_Mouse *mouse = SDL_GetMouse();
     int posted;
@@ -612,7 +612,7 @@ SDL_SendMouseWheel(SDL_Window * window, SDL_MouseID mouseID, float x, float y, S
         SDL_SetMouseFocus(window);
     }
 
-    if (x == 0.0f && y == 0.0f) {
+    if (x == 0.0f && y == 0.0f && continuousX == 0 && continuousY == 0) {
         return 0;
     }
 
@@ -643,10 +643,9 @@ SDL_SendMouseWheel(SDL_Window * window, SDL_MouseID mouseID, float x, float y, S
         event.type = SDL_MOUSEWHEEL;
         event.wheel.windowID = mouse->focus ? mouse->focus->id : 0;
         event.wheel.which = mouseID;
-#if 0 /* Uncomment this when it goes in for SDL 2.1 */
-        event.wheel.preciseX = x;
-        event.wheel.preciseY = y;
-#endif
+        event.wheel.continuousX = continuousX;
+        event.wheel.continuousY = continuousY;
+        event.wheel.isContinuousSource = isContinuousSource;
         event.wheel.x = integral_x;
         event.wheel.y = integral_y;
         event.wheel.direction = (Uint32)direction;

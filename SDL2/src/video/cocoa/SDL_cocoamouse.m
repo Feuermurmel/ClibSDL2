@@ -454,6 +454,12 @@ Cocoa_HandleMouseEvent(_THIS, NSEvent *event)
     SDL_SendMouseMotion(mouse->focus, mouseID, 1, (int)deltaX, (int)deltaY);
 }
 
+int64_t tameNonContinuousDelta(int64_t delta) {
+    int64_t sign = (delta > 0) - (delta < 0);
+
+    return sign * (int64_t) sqrt(sign * delta);
+}
+
 void
 Cocoa_HandleMouseWheel(SDL_Window *window, NSEvent *event)
 {
@@ -463,8 +469,20 @@ Cocoa_HandleMouseWheel(SDL_Window *window, NSEvent *event)
     }
 
     SDL_MouseID mouseID = mouse->mouseID;
-    CGFloat x = -[event deltaX];
-    CGFloat y = [event deltaY];
+    
+    CGEventRef cgEvent = [event CGEvent];
+    
+    if (cgEvent == NULL) {
+        printf("Got NSEvent without associated CGEvent.\n");
+        return;
+    }
+    
+    int64_t deltaX = CGEventGetIntegerValueField(cgEvent, kCGScrollWheelEventDeltaAxis2);
+    int64_t deltaY = CGEventGetIntegerValueField(cgEvent, kCGScrollWheelEventDeltaAxis1);
+    int64_t pointDeltaX = CGEventGetIntegerValueField(cgEvent, kCGScrollWheelEventPointDeltaAxis2);
+    int64_t pointDeltaY = CGEventGetIntegerValueField(cgEvent, kCGScrollWheelEventPointDeltaAxis1);
+    int64_t isContinuous = CGEventGetIntegerValueField(cgEvent, kCGScrollWheelEventIsContinuous);
+    
     SDL_MouseWheelDirection direction = SDL_MOUSEWHEEL_NORMAL;
 
     if ([event respondsToSelector:@selector(isDirectionInvertedFromDevice)]) {
@@ -473,18 +491,16 @@ Cocoa_HandleMouseWheel(SDL_Window *window, NSEvent *event)
         }
     }
 
-    if (x > 0) {
-        x = SDL_ceil(x);
-    } else if (x < 0) {
-        x = SDL_floor(x);
+    if (!isContinuous) {
+        // macOS doesn't really have a concept of "line-based" scrolling,
+        // i.e. changing an integer value, anymore and the values from
+        // non-continuous devices here are much to large to use for such a
+        // type of scrolling.
+        deltaX = tameNonContinuousDelta(deltaX);
+        deltaY = tameNonContinuousDelta(deltaY);
     }
-    if (y > 0) {
-        y = SDL_ceil(y);
-    } else if (y < 0) {
-        y = SDL_floor(y);
-    }
-
-    SDL_SendMouseWheel(window, mouseID, x, y, direction);
+    
+    SDL_SendMouseWheel(window, mouseID, -deltaX, deltaY, -pointDeltaX, pointDeltaY, isContinuous != 0, direction);
 }
 
 void
