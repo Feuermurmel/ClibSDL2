@@ -4,4 +4,4 @@ set -eu
 
 cd "$(dirname "$BASH_SOURCE")"
 
-curl -O 'https://libsdl.org/release/SDL2-2.0.18.zip'
+curl -O 'https://libsdl.org/release/SDL2-2.0.20.zip'
