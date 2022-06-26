@@ -42,13 +42,16 @@ $(sdl_framework_path)/Info.plist: $(sdl_dylib_path) $(sdl_image_dylib_path)
 
 $(sdl_image_build_path)/config.status: $(sdl_dylib_path)
 	mkdir -p $(sdl_image_build_path)
+	# --with-sdl-prefix necessary because otherwise configure may pick up a
+	# system-wide SDL installation instead.
 	cd $(sdl_image_build_path) && $(abspath SDL2_image/configure) \
         CC="clang" \
         CFLAGS="-arch x86_64 -arch arm64" \
         LDFLAGS="-arch x86_64 -arch arm64" \
         --disable-webp \
         --disable-static \
-        --prefix="$(abspath prefix)"
+        --prefix="$(abspath prefix)" \
+        --with-sdl-prefix="$(abspath prefix)"
 
 $(sdl_image_dylib_path): $(sdl_image_build_path)/config.status
 	$(MAKE) -C $(sdl_image_build_path) install
