@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2021 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -253,7 +253,7 @@ Cocoa_WarpMouseGlobal(int x, int y)
 static void
 Cocoa_WarpMouse(SDL_Window * window, int x, int y)
 {
-    Cocoa_WarpMouseGlobal(x + window->x, y + window->y);
+    Cocoa_WarpMouseGlobal(window->x + x, window->y + y);
 }
 
 static int
@@ -262,9 +262,9 @@ Cocoa_SetRelativeMouseMode(SDL_bool enabled)
     /* We will re-apply the relative mode when the window gets focus, if it
      * doesn't have focus right now.
      */
-    SDL_Window *window = SDL_GetMouseFocus();
+    SDL_Window *window = SDL_GetKeyboardFocus();
     if (!window) {
-      return 0;
+        return 0;
     }
 
     /* We will re-apply the relative mode when the window finishes being moved,
@@ -469,20 +469,20 @@ Cocoa_HandleMouseWheel(SDL_Window *window, NSEvent *event)
     }
 
     SDL_MouseID mouseID = mouse->mouseID;
-    
+
     CGEventRef cgEvent = [event CGEvent];
-    
+
     if (cgEvent == NULL) {
         printf("Got NSEvent without associated CGEvent.\n");
         return;
     }
-    
+
     int64_t deltaX = CGEventGetIntegerValueField(cgEvent, kCGScrollWheelEventDeltaAxis2);
     int64_t deltaY = CGEventGetIntegerValueField(cgEvent, kCGScrollWheelEventDeltaAxis1);
     int64_t pointDeltaX = CGEventGetIntegerValueField(cgEvent, kCGScrollWheelEventPointDeltaAxis2);
     int64_t pointDeltaY = CGEventGetIntegerValueField(cgEvent, kCGScrollWheelEventPointDeltaAxis1);
     int64_t isContinuous = CGEventGetIntegerValueField(cgEvent, kCGScrollWheelEventIsContinuous);
-    
+
     SDL_MouseWheelDirection direction = SDL_MOUSEWHEEL_NORMAL;
 
     if ([event respondsToSelector:@selector(isDirectionInvertedFromDevice)]) {
@@ -491,15 +491,19 @@ Cocoa_HandleMouseWheel(SDL_Window *window, NSEvent *event)
         }
     }
 
-    if (!isContinuous) {
+    /* For discrete scroll events from conventional mice, always send a full tick.
+       For continuous scroll events from trackpads, send fractional deltas for smoother scrolling. */
+    if (![event respondsToSelector:@selector(hasPreciseScrollingDeltas)] || ![event hasPreciseScrollingDeltas]) {
+        if (!isContinuous) {
         // macOS doesn't really have a concept of "line-based" scrolling,
-        // i.e. changing an integer value, anymore and the values from
+            // i.e. changing an integer value, anymore and the values from
         // non-continuous devices here are much to large to use for such a
         // type of scrolling.
-        deltaX = tameNonContinuousDelta(deltaX);
+            deltaX = tameNonContinuousDelta(deltaX);
         deltaY = tameNonContinuousDelta(deltaY);
+        }
     }
-    
+
     SDL_SendMouseWheel(window, mouseID, -deltaX, deltaY, -pointDeltaX, pointDeltaY, isContinuous != 0, direction);
 }
 
