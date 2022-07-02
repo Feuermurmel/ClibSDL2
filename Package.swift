@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "ClibSDL2", targets: ["ClibSDL2"])],
     targets: [
         .executableTarget(name: "TestSDL", dependencies: ["ClibSDL2"]),
+        .executableTarget(name: "TestScrolling", dependencies: ["ClibSDL2"]),
         .target(name: "ClibSDL2", dependencies: ["libSDL2", "libSDL2_image"]),
         .binaryTarget(name: "libSDL2", path: "Frameworks/libSDL2.xcframework"),
         .binaryTarget(name: "libSDL2_image", path: "Frameworks/libSDL2_image.xcframework")])
